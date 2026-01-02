@@ -62,11 +62,22 @@
 
   function normalize(state) {
     const pricing = state.settings?.pricing || {};
+    const normalizedInvoices = (state.invoices || []).map((inv) => ({
+      payments: [],
+      paymentMethod: inv?.paymentMethod || "",
+      paymentNotes: inv?.paymentNotes || "",
+      paymentUrl: inv?.paymentUrl || "",
+      taxIncluded: !!inv?.taxIncluded,
+      travel: inv?.travel || 0,
+      discount: inv?.discount || 0,
+      ...inv,
+      payments: inv?.payments || [],
+    }));
     return {
       ...state,
       clients: state.clients || [],
       appointments: state.appointments || [],
-      invoices: state.invoices || [],
+      invoices: normalizedInvoices,
       templates: state.templates || [],
       quickLinks: state.quickLinks || [],
       settings: {
@@ -127,6 +138,7 @@
       { id: uid(), label: "Email", url: "mailto:parristechservices@gmail.com" },
       { id: uid(), label: "Facebook", url: "https://www.facebook.com/parristechservices/" },
       { id: uid(), label: "LinkedIn", url: "https://au.linkedin.com/in/joshua-parris-b31444260" },
+      { id: uid(), label: "ParrisTechApp", url: "https://parris-tech-app.vercel.app/" },
       { id: uid(), label: "ABN lookup", url: "https://abr.business.gov.au/ABN/View?id=19911769423" },
     ];
     return {
@@ -226,6 +238,10 @@
           dueDate: "",
           reference: "",
           taxIncluded: false,
+          payments: [],
+          paymentMethod: "",
+          paymentNotes: "",
+          paymentUrl: "",
           ...input,
         };
         normalized.total = calculateInvoiceTotal(normalized);
@@ -245,6 +261,25 @@
           invoice.status = status;
           persist();
         }
+      },
+      recordPayment: (id, payment) => {
+        const invoice = appState.invoices.find((i) => i.id === id);
+        if (!invoice) return null;
+        invoice.payments = invoice.payments || [];
+        const entry = {
+          id: utils.uid(),
+          date: payment.date || new Date().toISOString(),
+          amount: Number(payment.amount || 0),
+          method: payment.method || "",
+          note: payment.note || "",
+        };
+        invoice.payments.push(entry);
+        if (entry.method) invoice.paymentMethod = entry.method;
+        if (entry.note) invoice.paymentNotes = entry.note;
+        const paidTotal = invoice.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        if (paidTotal >= (invoice.total || 0)) invoice.status = "paid";
+        persist();
+        return entry;
       },
       deleteItem: (type, id) => {
         if (!Array.isArray(appState[type])) return;
@@ -442,6 +477,8 @@
     invoiceStatusFilter?.addEventListener("change", renderReconcile);
     invoiceDueFrom?.addEventListener("change", renderReconcile);
     invoiceDueTo?.addEventListener("change", renderReconcile);
+    invoiceAmountMin?.addEventListener("input", renderReconcile);
+    invoiceAmountMax?.addEventListener("input", renderReconcile);
     exportInvoicesCsvBtn?.addEventListener("click", exportInvoicesCsv);
     bulkMarkPaidBtn?.addEventListener("click", bulkMarkPaid);
     monthFilter?.addEventListener("change", renderReconcile);
@@ -660,9 +697,11 @@
           <button class="ghost small" data-action="edit">Edit</button>
           ${client.email ? `<a class="chip small" href="mailto:${client.email}">Email</a>` : ""}
           ${client.phone ? `<a class="chip small" href="tel:${client.phone}">Call</a>` : ""}
+          <button class="ghost small" data-action="ics">Client .ics</button>
         </div>
       `;
       li.querySelector('[data-action="edit"]').addEventListener("click", () => loadClientIntoForm(client.id));
+      li.querySelector('[data-action="ics"]').addEventListener("click", () => exportClientCalendar(client.id));
       clientListEl.appendChild(li);
     });
   }
@@ -847,6 +886,38 @@
     showToast('Calendar feed downloaded','success');
   }
 
+  function exportClientCalendar(clientId){
+    const client = state.clients.find(c=>c.id===clientId);
+    if (!client) return;
+    const clientAppts = state.appointments.filter(a=>a.clientId===clientId);
+    if (!clientAppts.length) { showToast('No appointments for this client','info'); return; }
+    const fmt = (d)=> d.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    const events = clientAppts.map(appt=>{
+      const start = new Date(appt.datetime);
+      const end = new Date(start.getTime() + (Number(appt.duration||60)*60000));
+      const desc = [appt.notes||'', appt.checklist?`Checklist: ${appt.checklist}`:'', appt.followUp?`Follow-up: ${new Date(appt.followUp).toLocaleString()}`:''].filter(Boolean).join('\\n');
+      return [
+        'BEGIN:VEVENT',
+        `UID:client-${clientId}-${appt.id}@parristech.local`,
+        `DTSTAMP:${fmt(new Date())}`,
+        `DTSTART:${fmt(start)}`,
+        `DTEND:${fmt(end)}`,
+        `SUMMARY:${client.name || 'Client'} — Parris Tech Appointment`,
+        `DESCRIPTION:${desc}`,
+        `LOCATION:${appt.location || ''}`,
+        'END:VEVENT'
+      ].join('\\r\\n');
+    }).join('\\r\\n');
+    const body = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ParrisTechServicesApp//EN',events,'END:VCALENDAR'].join('\\r\\n');
+    const blob = new Blob([body], {type:'text/calendar'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `parristech-${client.name || 'client'}.ics`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Client calendar downloaded','success');
+  }
+
   function saveSessionSummary(){
     const apptId = document.getElementById("appointmentId").value || (state.appointments[0]?.id || "");
     if (!apptId) { showToast('No appointment selected','warn'); return; }
@@ -994,6 +1065,10 @@
     invoiceTotalEl.textContent = utils.formatCurrency(stateApi.calculateInvoiceTotal(invoice));
   }
 
+  function getPaidTotal(invoice){
+    return (invoice.payments || []).reduce((sum,p)=> sum + (Number(p.amount)||0), 0);
+  }
+
   function saveInvoice(event) {
     event?.preventDefault();
     const appointmentId = invoiceAppointment.value || null;
@@ -1035,17 +1110,21 @@
     sorted.forEach((invoice) => {
       const appointment = state.appointments.find((a) => a.id === invoice.appointmentId);
       const client = state.clients.find((c) => c.id === (invoice.clientId || appointment?.clientId));
+      const paidTotal = getPaidTotal(invoice);
       const li = document.createElement("li");
       li.innerHTML = `
       <div><strong>${client?.name || "Invoice"}</strong> · ${utils.formatCurrency(invoice.total)}</div>
       <div>${appointment ? new Date(appointment.datetime).toLocaleString() : "No appointment linked"}</div>
       <div class="help">Due ${invoice.dueDate || "N/A"} ${invoice.reference ? `• Ref ${invoice.reference}` : ""} ${invoice.taxIncluded ? "• Tax incl." : ""} ${invoice.paymentUrl ? `• Pay: ${invoice.paymentUrl}` : ""} ${invoice.paymentMethod ? `• Method: ${invoice.paymentMethod}` : ""}</div>
+      <div class="help">Paid ${utils.formatCurrency(paidTotal)} / ${utils.formatCurrency(invoice.total)}</div>
+      ${invoice.payments?.length ? `<div class="help">Payments: ${invoice.payments.map(p=>`${utils.formatCurrency(p.amount||0)} ${p.method||""}`).join(" · ")}</div>` : ""}
       ${invoice.paymentNotes ? `<div class="help">Payment notes: ${invoice.paymentNotes}</div>` : ""}
         <div class="status ${invoice.status}">${invoice.status}</div>
         <div class="chip-row">
           <button class="ghost small" data-action="edit">Load</button>
           <button class="ghost small" data-action="mark">${invoice.status === "paid" ? "Mark unpaid" : "Mark paid"}</button>
           <button class="ghost small" data-action="print">Print</button>
+          <button class="ghost small" data-action="record">Record payment</button>
         </div>
       `;
       li.querySelector('[data-action="edit"]').addEventListener("click", () => loadInvoiceIntoForm(invoice.id));
@@ -1055,8 +1134,25 @@
         renderDashboard();
       });
       li.querySelector('[data-action="print"]').addEventListener("click", () => openPrintableInvoice(invoice));
+      li.querySelector('[data-action="record"]').addEventListener("click", () => promptRecordPayment(invoice));
       invoiceListEl.appendChild(li);
     });
+  }
+
+  function promptRecordPayment(invoice){
+    const paid = getPaidTotal(invoice);
+    const defaultAmt = Math.max(0, (invoice.total || 0) - paid) || invoice.total || "";
+    const amtStr = prompt("Payment amount", defaultAmt);
+    if (amtStr === null) return;
+    const amt = Number(amtStr);
+    if (!Number.isFinite(amt)) return showToast("Enter a valid amount","warn");
+    const method = prompt("Payment method (cash/card/bank/online/other)", invoice.paymentMethod || "");
+    const note = prompt("Payment notes / receipt ref", invoice.paymentNotes || "");
+    stateApi.recordPayment(invoice.id, { amount: amt, method, note });
+    renderInvoices();
+    renderReconcile();
+    renderDashboard();
+    showToast("Payment recorded","success");
   }
 
   function loadInvoiceIntoForm(id) {
@@ -1070,6 +1166,9 @@
     document.getElementById("invoiceStatus").value = invoice.status || "unpaid";
     document.getElementById("invoiceDueDate").value = invoice.dueDate || "";
     document.getElementById("invoiceReference").value = invoice.reference || "";
+    document.getElementById("invoicePaymentUrl").value = invoice.paymentUrl || "";
+    if (invoicePaymentMethod) invoicePaymentMethod.value = invoice.paymentMethod || "";
+    if (invoicePaymentNotes) invoicePaymentNotes.value = invoice.paymentNotes || "";
     document.getElementById("invoiceTaxIncluded").checked = !!invoice.taxIncluded;
     lineItemsContainer.innerHTML = "";
     timeBlocksContainer.innerHTML = "";
@@ -1324,15 +1423,19 @@
       filtered.forEach(inv=>{
         const client = state.clients.find(c=>c.id===inv.clientId);
         const dueText = inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : "N/A";
+        const paidTotal = getPaidTotal(inv);
         const li = document.createElement('li');
         li.innerHTML = `
           <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
             <div>
               <input type="checkbox" class="reconcile-check" data-id="${inv.id}">
               <strong>${client?.name || "Invoice"}</strong> · ${utils.formatCurrency(inv.total)} · ${inv.status}
-              <div class="help">Ref ${inv.reference || "—"} · Due ${dueText}</div>
+              <div class="help">Ref ${inv.reference || "—"} · Due ${dueText} · Paid ${utils.formatCurrency(paidTotal)}</div>
             </div>
-            <button class="ghost small" data-action="pay">Mark paid</button>
+            <div class="chip-row">
+              <button class="ghost small" data-action="record">Record payment</button>
+              <button class="ghost small" data-action="pay">Mark paid</button>
+            </div>
           </div>
         `;
         li.querySelector('[data-action="pay"]').addEventListener('click', ()=>{
@@ -1341,6 +1444,7 @@
           renderReconcile();
           renderDashboard();
         });
+        li.querySelector('[data-action="record"]').addEventListener('click', ()=>promptRecordPayment(inv));
         reconcileList.appendChild(li);
       });
     }
@@ -1355,6 +1459,8 @@
     const monthVal = monthFilter?.value;
     const monthStart = monthVal ? new Date(`${monthVal}-01T00:00:00`) : null;
     const monthEnd = monthVal ? new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999) : null;
+    const min = invoiceAmountMin?.value ? Number(invoiceAmountMin.value) : null;
+    const max = invoiceAmountMax?.value ? Number(invoiceAmountMax.value) : null;
     return state.invoices.filter(inv=>{
       const client = state.clients.find(c=>c.id===inv.clientId);
       const hay = [(client?.name||""), (inv.reference||""), inv.status||""].join(" ").toLowerCase();
@@ -1366,6 +1472,8 @@
         const d = new Date(inv.dueDate);
         if (d < monthStart || d > monthEnd) return false;
       }
+      if (min !== null && Number.isFinite(min) && (inv.total || 0) < min) return false;
+      if (max !== null && Number.isFinite(max) && (inv.total || 0) > max) return false;
       return true;
     });
   }
@@ -1410,6 +1518,12 @@
     const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const mtd = filtered.filter(inv=> inv.status==='paid' && inv.dueDate && new Date(inv.dueDate)>=startMonth)
       .reduce((s,inv)=>s+(inv.total||0),0);
+    const paidMtd = filtered.reduce((sum,inv)=>{
+      return sum + (inv.payments||[]).filter(p=>{
+        const d = new Date(p.date || p.createdAt || now);
+        return d >= startMonth && d <= now;
+      }).reduce((s2,p)=> s2 + (Number(p.amount)||0), 0);
+    },0);
     const overdue = filtered.filter(inv=> inv.status==='unpaid' && inv.dueDate && new Date(inv.dueDate) < now);
     const nextDue = filtered.filter(inv=>{
       if (inv.status !== 'unpaid' || !inv.dueDate) return false;
@@ -1425,7 +1539,7 @@
       else if (days <= 60) aging.b1 += (inv.total || 0);
       else aging.b2 += (inv.total || 0);
     });
-    if (mtdRevenueEl) mtdRevenueEl.textContent = utils.formatCurrency(mtd);
+    if (mtdRevenueEl) mtdRevenueEl.textContent = utils.formatCurrency(paidMtd || mtd);
     if (overdueCountEl) overdueCountEl.textContent = overdue.length;
     if (overdueTotalEl) overdueTotalEl.textContent = utils.formatCurrency(overdue.reduce((s,inv)=>s+(inv.total||0),0));
     if (nextDueCountEl) nextDueCountEl.textContent = nextDue.length;
@@ -1883,6 +1997,8 @@ Reboot and verify; recommend backups/password manager/2FA.`;
   const invoiceStatusFilter = document.getElementById("invoiceStatusFilter");
   const invoiceDueFrom = document.getElementById("invoiceDueFrom");
   const invoiceDueTo = document.getElementById("invoiceDueTo");
+  const invoiceAmountMin = document.getElementById("invoiceAmountMin");
+  const invoiceAmountMax = document.getElementById("invoiceAmountMax");
 const exportInvoicesCsvBtn = document.getElementById("exportInvoicesCsv");
 const bulkMarkPaidBtn = document.getElementById("bulkMarkPaid");
 const mtdRevenueEl = document.getElementById("mtdRevenue");

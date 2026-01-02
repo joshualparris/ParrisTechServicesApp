@@ -71,6 +71,7 @@
               <a class="chip" href="mailto:parristechservices@gmail.com">Email</a>
               <a class="chip" href="tel:0457633371">Call</a>
               <a class="chip" href="https://josh-hub-two.vercel.app/dashboard" target="_blank" rel="noopener noreferrer">JoshHub</a>
+              <a class="chip" href="https://parris-tech-app.vercel.app/" target="_blank" rel="noopener noreferrer">ParrisTechApp</a>
             </div>
           </div>
         </div>
@@ -367,6 +368,8 @@
             </select>
             <input type="date" id="invoiceDueFrom" aria-label="Invoice due date from">
             <input type="date" id="invoiceDueTo" aria-label="Invoice due date to">
+            <input type="number" id="invoiceAmountMin" placeholder="Min $" aria-label="Minimum amount" style="max-width:110px">
+            <input type="number" id="invoiceAmountMax" placeholder="Max $" aria-label="Maximum amount" style="max-width:110px">
           </div>
         </div>
         <div class="panel">
@@ -404,6 +407,7 @@
               <label>Email<input type="email" id="businessEmail"></label>
               <label>ABN (optional)<input type="text" id="businessAbn"></label>
               <label>Zoho Books invoice URL<input type="url" id="zohoBooksUrl" placeholder="https://books.zoho.com.au/app/7006266190#/invoices/new" aria-label="Zoho Books invoice URL"></label>
+              <div class="help muted">Enter your Zoho Books "New Invoice" URL to open invoices directly from the app. Leave blank to use the default.</div>
             </form>
           </div>
           <div class="panel">

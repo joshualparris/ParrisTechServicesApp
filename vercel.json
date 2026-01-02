@@ -1,0 +1,13 @@
+{
+  "builds": [
+    { "src": "Parris Tech Services/**", "use": "@vercel/static" },
+    { "src": "ParrisTechApp/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/parristechapp/(.*)", "dest": "/ParrisTechApp/$1" },
+    { "src": "/ParrisTechApp/(.*)", "dest": "/ParrisTechApp/$1" },
+    { "src": "/Parris%20Tech%20Services/(.*)", "dest": "/Parris%20Tech%20Services/$1" },
+    { "src": "/", "dest": "/Parris%20Tech%20Services/index.html" },
+    { "src": "/(.*)", "dest": "/Parris%20Tech%20Services/$1" }
+  ]
+}
