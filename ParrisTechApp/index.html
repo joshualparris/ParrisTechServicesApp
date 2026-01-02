@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParrisTechApp – Session Intake</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+    .card { max-width: 720px; margin: 0 auto; background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+    h1 { margin-top: 0; }
+    label { display: block; margin: 10px 0 4px; font-weight: 600; }
+    input, textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #1f2937; background: #0d1528; color: #e2e8f0; }
+    textarea { min-height: 140px; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    .chip { padding: 6px 10px; border-radius: 999px; border: 1px solid #1f2937; background: #0d1528; }
+    button { padding: 10px 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #38bdf8, #a855f7); color: #0b1222; font-weight: 700; cursor: pointer; margin-top: 10px; }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>ParrisTechApp</h1>
+    <p class="muted">Lightweight intake/checklist page opened from ParrisTechServicesApp. Capture what you did, then paste the session summary back.</p>
+    <div id="clientInfo"></div>
+    <div class="chips" id="deviceChips" role="region" aria-label="Client devices"></div>
+    <label for="notes">Checklist / Notes</label>
+    <textarea id="notes" placeholder="What you checked/fixed"></textarea>
+    <label for="summary">Session summary (will be copied back)</label>
+    <textarea id="summary" placeholder="e.g. Optimised startup, cleaned storage, set updates, educated on scams"></textarea>
+    <button id="copyAndReturn" aria-label="Copy session summary and return to Parris Tech Services">Copy summary & return</button>
+    <p class="muted">Returning puts the summary into the URL so ParrisTechServicesApp can ingest it automatically.</p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const client = params.get('client') || 'Client';
+    const appt = params.get('appt') || '';
+    const devices = (params.get('devices') || '').split(',').filter(Boolean);
+    document.getElementById('clientInfo').innerHTML = `<strong>Client:</strong> ${decodeURIComponent(client)}${appt ? `<br><strong>Appointment ID:</strong> ${appt}` : ''}`;
+    const chips = document.getElementById('deviceChips');
+    devices.forEach(d => {
+      const span = document.createElement('span'); span.className = 'chip'; span.textContent = d; chips.appendChild(span);
+    });
+
+    document.getElementById('copyAndReturn').addEventListener('click', () => {
+      const summary = document.getElementById('summary').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+      const msg = summary || notes;
+      if (msg && navigator.clipboard?.writeText) navigator.clipboard.writeText(msg);
+      const url = new URL('../Parris Tech Services/index.html', window.location.href);
+      url.searchParams.set('sessionSummary', encodeURIComponent(summary || notes || ''));
+      if (appt) url.searchParams.set('appt', appt);
+      window.location.href = url.toString();
+    });
+  </script>
+</body>
+</html>

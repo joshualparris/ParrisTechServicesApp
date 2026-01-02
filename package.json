@@ -1,0 +1,12 @@
+{
+  "name": "parristechservicesapp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "check": "node ./scripts/check.js",
+    "a11y-check": "node ./scripts/a11y-check.js",
+    "test": "node ./scripts/run-tests.js",
+    "a11y-static": "node ./scripts/a11y-static.js"
+  },
+  "devDependencies": {}
+}

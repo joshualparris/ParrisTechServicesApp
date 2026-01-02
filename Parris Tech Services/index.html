@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParrisTechServicesApp</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="#dashboard" class="skip-link" style="position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden;" onfocus="this.style.position='static';this.style.left='8px';this.style.background='#fff';this.style.padding='8px';">Skip to dashboard</a>
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <img id="brandLogoHeader" class="brand-logo" src="docs/Logo - Parris Tech Services - Purple Modern Software Company Logo.png" alt="Parris Tech Services logo">
+      <div>
+        <div class="brand-name">ParrisTechServicesApp</div>
+        <div class="brand-subtitle">All-in-one hub for Parris Tech Services</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="primary" data-nav="dashboard" aria-label="Go to dashboard">Dashboard</button>
+      <button class="ghost" id="printInvoiceBtn" aria-label="Print selected invoice">Print Invoice</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" role="navigation" aria-label="Main navigation">
+              <label class="file-label">Import JSON<input type="file" id="importDataInputSettings" accept="application/json"></label>
+              <label class="file-label">Import encrypted backup<input type="file" id="importEncryptedInput" accept=".enc,.json,application/json"></label>
+              <button class="ghost" id="encryptExportBtnSettings">Export (passphrase)</button>
+      <button class="nav-item" data-nav="appointments">Appointments</button>
+      <button class="nav-item" data-nav="invoices">Invoices</button>
+      <button class="nav-item" data-nav="finance">Reconcile</button>
+      <button class="nav-item" data-nav="templates">Templates & Assets</button>
+      <button class="nav-item" data-nav="settings">Settings</button>
+      <button class="nav-item" data-nav="contact">Contact & About</button>
+    </nav>
+
+    <main class="content" role="main">
+      <section id="dashboard" class="view active">
+        <div class="section-header">
+          <h1>Dashboard</h1>
+          <div class="actions">
+            <button class="primary" data-nav="appointments">Book Appointment</button>
+            <button class="ghost" data-nav="invoices">New Invoice</button>
+            <button class="ghost" data-nav="clients">Add Client</button>
+          </div>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <h3>Today's Appointments</h3>
+            <ul id="todayAppointments" class="stack-list"></ul>
+          </div>
+          <div class="card">
+            <h3>Unpaid Invoices</h3>
+            <div id="unpaidCount" class="metric">0</div>
+            <button class="ghost small" data-nav="invoices">Review invoices</button>
+          </div>
+          <div class="card">
+            <h3>Analytics</h3>
+            <ul id="analyticsList" class="stack-list"></ul>
+            <button class="ghost small" id="downloadCalendarFeed">Download calendar (.ics)</button>
+          </div>
+          <div class="card">
+            <h3>Quick Actions</h3>
+            <div class="chip-row">
+              <button class="chip" data-nav="clients">Add new client</button>
+              <button class="chip" data-nav="appointments">Log arrival</button>
+              <button class="chip" id="bookCalendly">Book via Calendly</button>
+              <button class="chip" id="quickExport">Export data</button>
+              <button class="chip" data-nav="templates">Open templates</button>
+              <a class="chip" href="mailto:parristechservices@gmail.com">Email</a>
+              <a class="chip" href="tel:0457633371">Call</a>
+              <a class="chip" href="https://josh-hub-two.vercel.app/dashboard" target="_blank" rel="noopener noreferrer">JoshHub</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="clients" class="view">
+        <div class="section-header sticky">
+          <h1>Clients</h1>
+          <div class="actions">
+            <button class="primary" id="saveClientBtn">Save Client</button>
+          </div>
+        </div>
+        <div class="grid two-column">
+          <div class="panel">
+            <h3>Add / Edit Client</h3>
+            <form id="clientForm" class="form-grid">
+              <input type="hidden" id="clientId">
+              <label>Name<input type="text" id="clientName" required></label>
+              <label>Phone<input type="tel" id="clientPhone"></label>
+              <label>Email<input type="email" id="clientEmail"></label>
+              <label>Address<input type="text" id="clientAddress"></label>
+              <label>Preferred contact
+                <select id="clientContact">
+                  <option value="">Choose...</option>
+                  <option value="phone">Phone</option>
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                </select>
+              </label>
+              <label>Devices
+                <div style="display:flex;gap:8px;margin-top:6px">
+                  <label class="inline"><input type="checkbox" class="client-device" value="Windows"> Windows</label>
+                  <label class="inline"><input type="checkbox" class="client-device" value="Mac"> Mac</label>
+                  <label class="inline"><input type="checkbox" class="client-device" value="iPhone"> iPhone</label>
+                  <label class="inline"><input type="checkbox" class="client-device" value="Android"> Android</label>
+                </div>
+              </label>
+              
+              <label>Client type
+                <select id="clientType">
+                  <option value="">Select...</option>
+                  <option value="individual">Individual</option>
+                  <option value="business">Business</option>
+                </select>
+              </label>
+              <label>Tags (comma-separated)<input type="text" id="clientTags" placeholder="e.g. elderly, remote, recurring"></label>
+              <label class="inline"><input type="checkbox" id="clientConsent"> Consent collected</label>
+              <label>Last contact<input type="datetime-local" id="clientLastContact"></label>
+              <label>Concession?<input type="checkbox" id="clientConcession"></label>
+              <label>Notes<textarea id="clientNotes" rows="3"></textarea></label>
+            </form>
+          </div>
+          <div class="panel">
+            <h3>Search & Filter</h3>
+            <div class="filters">
+              <input type="search" id="clientSearch" placeholder="Search by name, phone, email" aria-label="Search clients">
+                  <label class="inline"><input type="checkbox" id="concessionOnly"> Concession only</label>
+                  <label class="inline"><input type="checkbox" id="businessOnly"> Business only</label>
+                  <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+                    <input type="file" id="importClientsCsv" accept=".csv,text/csv" aria-label="Import clients CSV file">
+                    <button class="ghost small" id="findDuplicatesBtn">Find Duplicates</button>
+                  </div>
+                  <div id="csvMapModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="csvMapTitle" tabindex="-1" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;z-index:60">
+                    <div role="document" style="background:#fff;padding:16px;max-width:720px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,0.2);border-radius:6px">
+                      <h4 id="csvMapTitle">Map CSV columns to client fields</h4>
+                      <div id="csvMapContainer" style="max-height:320px;overflow:auto;margin-bottom:8px"></div>
+                      <div style="display:flex;gap:8px;justify-content:flex-end">
+                        <button id="csvMapCancel" class="ghost small" aria-label="Cancel CSV import">Cancel</button>
+                        <button id="csvMapApply" class="primary small" aria-label="Apply CSV mapping">Import</button>
+                      </div>
+                    </div>
+                  </div>
+            </div>
+            <ul id="clientList" class="stack-list tall"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="appointments" class="view">
+        <div class="section-header sticky">
+          <h1>Appointments</h1>
+          <div class="actions">
+            <button class="primary" id="saveAppointmentBtn">Save Appointment</button>
+          </div>
+        </div>
+        <div class="grid two-column">
+          <div class="panel">
+            <h3>Create / Edit</h3>
+            <form id="appointmentForm" class="form-grid">
+              <input type="hidden" id="appointmentId">
+              <label>Client<select id="appointmentClient" required></select></label>
+              <label>Date & Time<input type="datetime-local" id="appointmentDate" required></label>
+              <label>Location
+                <select id="appointmentLocation">
+                  <option value="onsite">Onsite</option>
+                  <option value="remote">Remote</option>
+                </select>
+              </label>
+              <label>Duration (minutes)<input type="number" id="appointmentDuration" min="15" step="15" value="60"></label>
+              <label>Status
+                <select id="appointmentStatus">
+                  <option value="booked">Booked</option>
+                  <option value="arrived">Arrived</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="no-show">No Show</option>
+                </select>
+              </label>
+              <label class="inline"><input type="checkbox" id="appointmentRecurring"> Recurring</label>
+              <label>Follow-up reminder<input type="datetime-local" id="appointmentFollowUp"></label>
+              <label>Device checklist<textarea id="appointmentChecklist" rows="3" placeholder="Checklist items for this client/device"></textarea></label>
+              <label>Notes<textarea id="appointmentNotes" rows="3"></textarea></label>
+            </form>
+          </div>
+          <div class="panel">
+            <h3>Upcoming</h3>
+            <ul id="appointmentList" class="stack-list tall"></ul>
+          </div>
+          <div class="panel">
+            <h3>Export / Calendar</h3>
+            <p class="help">You can export an appointment to your calendar from the appointment row (Export .ics).</p>
+          </div>
+          <div class="panel">
+          <h3>ParrisTechApp handoff</h3>
+          <p class="help">When you click “Launch Session”, the app opens ParrisTechApp with client and devices in the URL. Paste back the session summary here after finishing.</p>
+            <textarea id="sessionSummary" rows="3" placeholder="Paste session summary from ParrisTechApp" aria-label="Session summary from ParrisTechApp"></textarea>
+          <button class="ghost small" id="saveSessionSummary">Save to notes</button>
+        </div>
+        </div>
+      </section>
+
+      <div id="toastContainer" role="status" aria-live="polite" aria-atomic="true"></div>
+      <div id="confirmModal" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" style="display:none">
+        <div class="modal">
+          <div id="confirmMessage">Are you sure?</div>
+          <div class="actions">
+            <button id="confirmCancel" class="ghost small">Cancel</button>
+            <button id="confirmOk" class="primary small">Confirm</button>
+          </div>
+        </div>
+      </div>
+
+      <section id="invoices" class="view">
+        <div class="section-header sticky">
+          <h1>Invoices</h1>
+          <div class="actions">
+            <button class="primary" id="saveInvoiceBtn">Create Invoice</button>
+          </div>
+        </div>
+        <div class="grid two-column">
+          <div class="panel">
+            <h3>Create from Appointment</h3>
+            <form id="invoiceForm" class="form-grid">
+              <input type="hidden" id="invoiceId">
+              <label>Appointment<select id="invoiceAppointment"></select></label>
+              <div class="subsection">
+                <div class="subheader">Line Items</div>
+                <div id="lineItems"></div>
+                <button type="button" class="ghost small" id="addLineItem">Add line item</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+                <input type="text" id="presetName" placeholder="Preset name (e.g. Home visit)" style="flex:1" aria-label="Invoice preset name">
+                <button type="button" id="saveInvoicePreset" class="ghost small">Save Preset</button>
+                <select id="invoicePresetsSelect" style="min-width:180px" aria-label="Saved invoice presets"></select>
+                <button type="button" id="applyInvoicePreset" class="ghost small">Apply</button>
+                <button type="button" id="deleteInvoicePreset" class="ghost small">Delete</button>
+              </div>
+              <div class="subsection">
+                <div class="subheader">Labour time blocks</div>
+                <div id="timeBlocks"></div>
+                <button type="button" class="ghost small" id="addTimeBlock">Add time block</button>
+              </div>
+              <div class="chip-row">
+                <button type="button" class="ghost small" id="presetCallout">Preset: Call-out</button>
+                <button type="button" class="ghost small" id="presetFirstVisit">Preset: First visit discount</button>
+                <button type="button" class="ghost small" id="presetBusinessRate">Preset: Business rate</button>
+                <button type="button" class="ghost small" id="presetIndividualRate">Preset: Individual rate</button>
+              </div>
+              <label>Call-out / Travel<input type="number" id="invoiceTravel" min="0" step="1" value="0"></label>
+              <label>Discount<input type="number" id="invoiceDiscount" min="0" step="1" value="0"></label>
+              <label>Due date<input type="date" id="invoiceDueDate"></label>
+              <label>Payment reference<input type="text" id="invoiceReference" placeholder="e.g. PTS-001"></label>
+              <label>Payment URL (optional)<input type="url" id="invoicePaymentUrl" placeholder="https://your-payments.example/pay/INV-123" aria-label="Invoice payment URL"></label>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+                <button type="button" id="stripeTemplateBtn" class="ghost small" aria-label="Use Stripe payment template">Stripe template</button>
+                <button type="button" id="paypalTemplateBtn" class="ghost small" aria-label="Use PayPal payment template">PayPal template</button>
+                <small class="muted">(Click to insert a quick payment link you can edit)</small>
+              </div>
+              <label>Payment method
+                <select id="invoicePaymentMethod" aria-label="Invoice payment method">
+                  <option value="">Select...</option>
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="bank">Bank transfer</option>
+                  <option value="online">Online payment</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label>Payment notes<textarea id="invoicePaymentNotes" rows="2" placeholder="Payment details, receipt info"></textarea></label>
+              <label class="inline"><input type="checkbox" id="invoiceTaxIncluded"> Include tax (GST)</label>
+              <label>Status
+                <select id="invoiceStatus">
+                  <option value="unpaid">Unpaid</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </label>
+              <div class="total-row">
+                <span>Calculated total:</span>
+                <strong id="invoiceTotal">$0.00</strong>
+              </div>
+            </form>
+          </div>
+        <div class="panel">
+          <h3>Invoices</h3>
+          <ul id="invoiceList" class="stack-list tall"></ul>
+          <div class="muted" style="margin-top:8px;font-size:13px">Tip: Use the "Create in Zoho" button to open a new invoice in Zoho Books.</div>
+        </div>
+        <div class="panel">
+          <h3>Reporting</h3>
+          <button class="ghost small" id="exportDailyWorksheet">Print daily worksheet</button>
+          <button class="ghost small" id="exportInvoiceCsvQuick">Export invoices CSV</button>
+        </div>
+      </div>
+    </section>
+
+      <section id="templates" class="view">
+        <div class="section-header sticky">
+          <h1>Templates & Assets</h1>
+          <div class="actions">
+            <button class="primary" id="saveTemplateBtn">Save Template</button>
+          </div>
+        </div>
+        <div class="grid two-column">
+          <div class="panel">
+            <h3>Reusable Snippet</h3>
+            <form id="templateForm" class="form-grid">
+              <input type="hidden" id="templateId">
+              <label>Title<input type="text" id="templateTitle" required></label>
+              <label>Category<input type="text" id="templateCategory" placeholder="Booking confirmation, follow-up..."></label>
+              <label>Content<textarea id="templateContent" rows="6" required></textarea></label>
+
+              <div class="subsection">
+                <div class="subheader">Template Variables</div>
+                <div class="help">Available variables: <code>{{name}}</code>, <code>{{datetime}}</code>, <code>{{location}}</code></div>
+                <select id="templateVarSelect" aria-label="Template variable selector">
+                  <option value="name">{{name}}</option>
+                  <option value="datetime">{{datetime}}</option>
+                  <option value="location">{{location}}</option>
+                </select>
+                <button type="button" id="insertVarBtn" class="ghost small">Insert variable</button>
+                <button type="button" id="previewTemplateBtn" class="ghost small">Preview</button>
+                <button type="button" id="sendTemplateBtn" class="primary">Send Template</button>
+                <div id="templatePreview" class="card" style="margin-top:8px;white-space:pre-wrap;background:#f8fafc"></div>
+              </div>
+            </form>
+          </div>
+          <div class="panel">
+          <h3>Templates</h3>
+          <ul id="templateList" class="stack-list tall"></ul>
+        </div>
+      </div>
+        <div class="panel">
+          <div class="section-header">
+            <h3>Quick Links</h3>
+            <div class="actions">
+              <button class="primary" id="saveLinkBtn">Add Link</button>
+            </div>
+          </div>
+          <form id="linkForm" class="form-grid inline-grid">
+            <input type="hidden" id="linkId">
+            <label>Label<input type="text" id="linkLabel" required></label>
+            <label>URL<input type="url" id="linkUrl" required></label>
+          </form>
+          <div id="quickLinks" class="chip-row wrap"></div>
+        </div>
+      </section>
+
+      <section id="finance" class="view">
+        <div class="section-header sticky">
+          <h1>Reconcile</h1>
+          <div class="actions">
+            <button class="ghost" id="bulkMarkPaid">Mark selected paid</button>
+            <button class="ghost" id="exportInvoicesCsv">Export CSV</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Filters</h3>
+          <div class="filters" style="flex-wrap:wrap;">
+            <input type="search" id="invoiceSearch" placeholder="Search client, reference" aria-label="Search invoices">
+            <select id="invoiceStatusFilter" aria-label="Invoice status filter">
+              <option value="">All statuses</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+            <input type="date" id="invoiceDueFrom" aria-label="Invoice due date from">
+            <input type="date" id="invoiceDueTo" aria-label="Invoice due date to">
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Invoices</h3>
+          <ul id="reconcileList" class="stack-list tall"></ul>
+        </div>
+        <div class="panel">
+          <h3>Finance Summary</h3>
+          <ul class="stack-list">
+            <li><strong>MTD revenue:</strong> <span id="mtdRevenue">$0.00</span></li>
+            <li><strong>Overdue:</strong> <span id="overdueCount">0</span> invoices (<span id="overdueTotal">$0.00</span>)</li>
+            <li><strong>Next 7 days due:</strong> <span id="nextDueCount">0</span></li>
+            <li><strong>Aging:</strong> <span id="agingSummary">0/0/0</span> (0-30 / 31-60 / 61+ days)</li>
+          </ul>
+          <div class="actions">
+            <input type="month" id="monthFilter" aria-label="Month for summary">
+            <button class="ghost small" id="exportMonthlyCsv">Export monthly summary</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="settings" class="view">
+        <div class="section-header sticky">
+          <h1>Settings</h1>
+          <div class="actions">
+            <button class="primary" id="saveSettingsBtn">Save Settings</button>
+          </div>
+        </div>
+        <div class="grid two-column">
+          <div class="panel">
+            <h3>Business Details</h3>
+            <form id="settingsForm" class="form-grid">
+              <label>Business name<input type="text" id="businessName"></label>
+              <label>Phone<input type="tel" id="businessPhone"></label>
+              <label>Email<input type="email" id="businessEmail"></label>
+              <label>ABN (optional)<input type="text" id="businessAbn"></label>
+              <label>Zoho Books invoice URL<input type="url" id="zohoBooksUrl" placeholder="https://books.zoho.com.au/app/7006266190#/invoices/new" aria-label="Zoho Books invoice URL"></label>
+            </form>
+          </div>
+          <div class="panel">
+            <h3>Pricing Model</h3>
+            <form id="pricingForm" class="form-grid">
+              <label class="inline"><input type="radio" name="pricingModel" value="time-block" checked> Time-block pricing</label>
+              <label>Block minutes<input type="number" id="blockMinutes" min="15" step="15" value="30"></label>
+              <label>Block rate ($)<input type="number" id="blockRate" min="0" step="1" value="60"></label>
+              <label class="inline"><input type="radio" name="pricingModel" value="hourly"> Hourly pricing</label>
+              <label>Hourly rate ($)<input type="number" id="hourlyRate" min="0" step="1" value="90"></label>
+              <label>Notes<textarea id="pricingNotes" rows="2" placeholder="Describe how you price jobs"></textarea></label>
+            </form>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="section-header">
+            <h3>Data</h3>
+            <div class="actions">
+              <button class="ghost" id="loadDemoBtn">Load demo data</button>
+              <select id="seedSelector" aria-label="Seed selector">
+                <option value="default">Default seed</option>
+                <option value="individual">Individual-focused</option>
+                <option value="business">Business-focused</option>
+              </select>
+              <button class="ghost" id="exportDataBtn">Export JSON</button>
+              <label class="file-label">Import JSON<input type="file" id="importDataInput" accept="application/json"></label>
+              <button class="ghost" id="encryptExportBtn">Export (passphrase)</button>
+              <label class="file-label">Dry-run import<input type="file" id="dryRunImportInput" accept="application/json,.enc"></label>
+            </div>
+          </div>
+          <p class="help">Data is stored locally in your browser (localStorage). Export a backup before clearing your browser.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Invoice defaults</h3>
+          <form class="form-grid">
+            <label>Invoice footer<textarea id="invoiceFooter" rows="3" placeholder="Payment details, thanks note, ABN"></textarea></label>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3>Branding</h3>
+          <form class="form-grid inline-grid">
+            <label>Primary color<input type="color" id="brandPrimary" value="#38bdf8"></label>
+            <label>Accent color<input type="color" id="brandAccent" value="#a855f7"></label>
+            <label class="file-label">Logo upload<input type="file" id="brandLogoInput" accept="image/*"></label>
+            <img id="brandLogoPreview" alt="Logo preview" style="max-height:60px; display:none;">
+            <label>Theme
+              <select id="brandTheme">
+                <option value="default">Default</option>
+                <option value="irish">Irish</option>
+                <option value="aussie">Aussie</option>
+                <option value="halloween">Halloween</option>
+                <option value="christmas">Christmas</option>
+              </select>
+            </label>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3>README (how to run)</h3>
+          <p>Open <code>index.html</code> in any modern browser. Everything runs locally, and data persists in <code>localStorage</code>. Use Export/Import in Settings to back up or move data. Click "Print Invoice" in the header or an invoice row to open the printable view.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Onboarding Tips</h3>
+          <button class="ghost small" id="showOnboarding">Show tips</button>
+        </div>
+      </section>
+
+      <div id="onboardingModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:70;align-items:center;justify-content:center;">
+        <div style="background:#111827;border:1px solid #1f2937;border-radius:12px;padding:16px;max-width:520px;width:92%;color:#e2e8f0;">
+          <h3>Quick tour</h3>
+          <ul>
+            <li>Use sidebar or Ctrl/Cmd+1-4 to jump views; Ctrl/Cmd+S saves current form.</li>
+            <li>Dashboard chips: add client, log arrival, templates, JoshHub, calendar feed.</li>
+            <li>Reconcile tab: filters, bulk mark paid, finance summary, CSV exports.</li>
+            <li>Appointments: launch ParrisTechApp; summary auto-ingest on return.</li>
+            <li>Settings: brand colors/logo, seeds, encrypted export, dry-run import.</li>
+          </ul>
+          <div class="actions">
+            <button class="ghost small" id="closeOnboarding">Close</button>
+            <label class="inline"><input type="checkbox" id="dismissOnboarding"> Don’t show again</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="mobile-nav">
+        <button data-nav="dashboard" aria-label="Dashboard">🏠</button>
+        <button data-nav="clients" aria-label="Clients">👥</button>
+        <button data-nav="appointments" aria-label="Appointments">📅</button>
+        <button data-nav="invoices" aria-label="Invoices">🧾</button>
+        <button data-nav="finance" aria-label="Reconcile">💰</button>
+      </div>
+
+      <section id="contact" class="view">
+        <div class="section-header">
+          <h1>Contact & About</h1>
+          <div class="actions">
+            <a class="primary" href="https://calendly.com/parristechservices1/computer-consultation" target="_blank" rel="noopener noreferrer">Book via Calendly</a>
+            <a class="ghost" href="mailto:parristechservices@gmail.com">Email Joshua</a>
+            <a class="ghost" href="tel:0457633371">Call 0457 633 371</a>
+          </div>
+        </div>
+        <div class="grid two-column">
+          <div class="panel">
+            <h3>Business details</h3>
+            <p><strong>Parris Tech Services</strong><br>Owner: Joshua Parris<br>Phone: <a href="tel:0457633371">0457 633 371</a><br>Email: <a href="mailto:parristechservices@gmail.com">parristechservices@gmail.com</a><br>ABN: <a href="https://abr.business.gov.au/ABN/View?id=19911769423" target="_blank" rel="noopener noreferrer">19 911 769 423</a></p>
+            <div class="chip-row">
+              <a class="chip" href="https://parristechservices.wixsite.com/parris-tech-services" target="_blank" rel="noopener noreferrer">Wix site</a>
+              <a class="chip" href="https://parristechservices.square.site/" target="_blank" rel="noopener noreferrer">Square site</a>
+              <a class="chip" href="https://parristechservices.square.site/about" target="_blank" rel="noopener noreferrer">About page</a>
+              <a class="chip" href="https://calendly.com/parristechservices1/computer-consultation" target="_blank" rel="noopener noreferrer">Calendly booking</a>
+              <a class="chip" href="https://josh-hub-two.vercel.app/dashboard" target="_blank" rel="noopener noreferrer">JoshHub</a>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Social</h3>
+            <div class="chip-row wrap">
+              <a class="chip" href="https://www.facebook.com/parristechservices/" target="_blank" rel="noopener noreferrer">Facebook</a>
+              <a class="chip" href="https://au.linkedin.com/in/joshua-parris-b31444260" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            </div>
+            <h3>Services</h3>
+            <ul class="stack-list">
+              <li>Clean cluttered hard drives & storage tuning</li>
+              <li>Run virus scans & security checks</li>
+              <li>Assist with Windows and Mac computers</li>
+              <li>Help with computer basics & education</li>
+              <li>Checkups for performance, storage, security, reliability</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="help" class="view">
+        <div class="section-header sticky">
+          <h1>Help & Services</h1>
+          <div class="actions">
+            <button class="primary" data-nav="contact">Contact</button>
+            <a class="ghost" href="mailto:parristechservices@gmail.com">Email</a>
+          </div>
+        </div>
+        <div class="grid two-column">
+          <div class="panel">
+            <h3>How we work</h3>
+            <ul class="stack-list">
+              <li>Understand goals and safety first (backups, consent) before changes.</li>
+              <li>Performance, storage, security, reliability checks on every visit.</li>
+              <li>Teach-as-you-go: simple explanations and written follow-up.</li>
+              <li>Clear invoices with time blocks, travel, and discounts as needed.</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>Services</h3>
+            <ul class="stack-list">
+              <li>Clean cluttered hard drives & storage tuning</li>
+              <li>Run virus scans & security checks</li>
+              <li>Windows & Mac assistance, setup, and updates</li>
+              <li>Cloud/backup setup and reliability checks</li>
+              <li>Device education and scam awareness</li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>FAQs</h3>
+          <ul class="stack-list">
+            <li><strong>Do you visit onsite?</strong> Yes, onsite and remote sessions are available.</li>
+            <li><strong>How do I book?</strong> Use the Calendly link or call 0457 633 371.</li>
+            <li><strong>Do you work with businesses?</strong> Yes, with tailored pricing for business vs individual.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <div class="section-header">
+            <h3>Changelog</h3>
+            <button class="ghost small" id="showChangelog">Show</button>
+          </div>
+          <div id="changelogEntries" class="stack-list"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Cleanup Checklists</h3>
+          <p class="help">Windows and macOS safe cleanup steps (plain text) for quick reference.</p>
+          <button class="ghost small" id="showCleanup">Show checklists</button>
+          <pre id="cleanupText" style="white-space:pre-wrap; display:none;"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.bundle.js" defer></script>
+</body>
+</html>
