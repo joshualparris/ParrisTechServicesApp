@@ -65,6 +65,8 @@ node stripe-checkout-server.js
 
 To use from the app (client-side): call the endpoint `POST /create-checkout-session` with JSON `{ amount: 12345, currency: 'aud', invoiceId: 'INV-123' }` — the endpoint returns `{ url }` which you can open to start Checkout.
 
+Repository: https://github.com/joshualparris/ParrisTechServicesApp
+
 Security: Do NOT commit or expose your Stripe secret key. This server is an example for local testing and should be deployed with proper secrets management for production.
 
 ---
